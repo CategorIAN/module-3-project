@@ -15,26 +15,39 @@ class Base(DeclarativeBase):
     pass
 
 # TODO: Create the association table for Book <-> Genre (many-to-many)
-# book_genres = Table(
-#     "book_genres",
-#     Base.metadata,
-#     Column("book_id",  Integer, ForeignKey("books.id"),  primary_key=True),
-#     Column("genre_id", Integer, ForeignKey("genres.id"), primary_key=True),
-# )
+book_genres = Table(
+     "book_genres",
+     Base.metadata,
+     Column("book_id",  Integer, ForeignKey("books.id"),  primary_key=True),
+     Column("genre_id", Integer, ForeignKey("genres.id"), primary_key=True),
+ )
+
+#=======Created Relations=============
+book_authors = Table(
+    "book_authors",
+    Base.metadata,
+    Column("book_id", Integer, ForeignKey("books.id", primary_key=True)),
+    Column("author_id", Integer, ForeignKey("authors.id", primary_key=True))
+)
+
+#Need books to members
 
 # TODO: Implement the Author model
 # Attributes: id (PK), name (required), bio (optional)
 class Author(Base):
     __tablename__ = "authors"
     # TODO: define columns
-    pass
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(nullable=False)
+    bio: Mapped[str] = mapped_column(nullable=True)
 
 # TODO: Implement the Genre model
 # Attributes: id (PK), name (required, unique)
 class Genre(Base):
     __tablename__ = "genres"
     # TODO: define columns
-    pass
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(nullable=False, unique=True)
 
 # TODO: Implement the Book model
 # Attributes: id (PK), title (required), isbn (unique, required),
@@ -43,14 +56,24 @@ class Genre(Base):
 class Book(Base):
     __tablename__ = "books"
     # TODO: define columns and relationships
-    pass
+    id: Mapped[int] = mapped_column(primary_key=True)
+    title: Mapped[str] = mapped_column(nullable=False)
+    isbn: Mapped[int] = mapped_column(unique=True, nullable=False)
+    year_published: Mapped[date] = mapped_column(nullable=True)
+    available: Mapped[bool] = mapped_column(default=True)
+
+
 
 # TODO: Implement the Borrower model
 # Attributes: id (PK), name (required), email (unique, required), phone (optional)
 class Borrower(Base):
     __tablename__ = "borrowers"
     # TODO: define columns
-    pass
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(nullable=False)
+    email: Mapped[str] = mapped_column(unique=True, nullable=False)
+    phone: Mapped[int] = mapped_column(nullable=True)
+    
 
 # TODO: Implement the Checkout model
 # Attributes: id (PK), book_id (FK), borrower_id (FK),
@@ -59,7 +82,12 @@ class Borrower(Base):
 class Checkout(Base):
     __tablename__ = "checkouts"
     # TODO: define columns and relationships
-    pass
+    id: Mapped[int] = mapped_column(primary_key=True)
+    book_id: Mapped[int] = mapped_column(ForeignKey("books.id"))
+    borrower_id: Mapped[int] = mapped_column(ForeignKey("borrowers.id"))
+    checkout_date: Mapped[date] = mapped_column()
+    due_date: Mapped[date] = mapped_column()
+    return_date: Mapped[date] = mapped_column(nullable=True)
 
 
 def init_db():
