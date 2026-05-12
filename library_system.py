@@ -7,7 +7,7 @@ Your job: Implement the SQLAlchemy models and all functions marked with # TODO.
 
 from sqlalchemy import create_engine, String, Integer, Boolean, ForeignKey, Table, Column, Date
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, Session
-from datetime import date
+from datetime import date, timedelta
 
 engine = create_engine("sqlite:///library.db", echo=False)
 
@@ -31,6 +31,12 @@ book_authors = Table(
 )
 
 #Need books to members
+book_members = Table(
+    "book_members",
+    Base.metadata,
+    Column("book_id", Integer, ForeignKey("books.id", primary_key=True)),
+    Column("borrower_id", Integer, ForeignKey("borrowers.id", primary_key=True))
+)
 
 # TODO: Implement the Author model
 # Attributes: id (PK), name (required), bio (optional)
@@ -59,9 +65,14 @@ class Book(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str] = mapped_column(nullable=False)
     isbn: Mapped[int] = mapped_column(unique=True, nullable=False)
-    year_published: Mapped[date] = mapped_column(nullable=True)
+    year_published: Mapped[int] = mapped_column(nullable=True)
     available: Mapped[bool] = mapped_column(default=True)
-
+    authors: Mapped[list["Author"]] = relationship(
+        secondary=book_authors, back_populates="authors"
+    )
+    genres: Mapped[list["Genre"]] = relationship(
+        secondary=book_genres, back_populates="genres"
+    )
 
 
 # TODO: Implement the Borrower model
@@ -103,7 +114,12 @@ def init_db():
 def add_author(name: str, bio: str = None):
     """Add a new author. Returns the created Author object."""
     # TODO: open Session, create Author, add + commit, return it
-    pass
+    with Session(engine) as session:
+        author = Author(name = name, bio = bio)
+        session.add(author)
+        session.commit()
+        session.refresh(author)
+
 
 def add_book(title: str, isbn: str, author_id: int,
              published_year: int = None, genre_names: list = None):
@@ -112,12 +128,39 @@ def add_book(title: str, isbn: str, author_id: int,
     Returns the created Book object.
     """
     # TODO: implement
-    pass
+    with Session(engine) as session:
+        author = session.get(Author, author_id)
+        genre_objects = []
+        if genre_names:
+            for name in genre_names:
+                genre = session.query(Genre).filter_by(name=name).first()
+                if not genre:
+                    genre = Genre(name=name)
+                    session.add(genre)
+                genre_objects.append(genre)
+        book = Book(
+            title = title, 
+            isbn = isbn, 
+            published_year = published_year, 
+            genres = genre_objects,
+            authors = [author]
+        )
+        session.add(book)
+        session.commit()
+        session.refresh(book)
 
 def add_borrower(name: str, email: str, phone: str = None):
     """Register a new borrower. Returns the created Borrower object."""
     # TODO: implement
-    pass
+    with Session(engine) as session:
+        borrower = Borrower(
+            name = name,
+            email = email,
+            phone = phone
+        )
+        session.add(borrower)
+        session.commit()
+        session.refresh(borrower)
 
 def checkout_book(book_id: int, borrower_id: int, days: int = 14):
     """
@@ -126,7 +169,14 @@ def checkout_book(book_id: int, borrower_id: int, days: int = 14):
     Returns the created Checkout object.
     """
     # TODO: implement
-    pass
+    with Session(engine) as session:
+        check_out = Checkout(
+            book_id = book_id,
+            borrower_id = borrower_id,
+            checkout_date = date.today(),
+            due_date = date.today() + timedelta(days=14)
+        )
+    # My TODO: Need to finish this.
 
 def return_book(checkout_id: int):
     """
