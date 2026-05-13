@@ -119,6 +119,7 @@ def add_author(name: str, bio: str = None):
         session.add(author)
         session.commit()
         session.refresh(author)
+        return author
 
 
 def add_book(title: str, isbn: str, author_id: int,
@@ -148,6 +149,7 @@ def add_book(title: str, isbn: str, author_id: int,
         session.add(book)
         session.commit()
         session.refresh(book)
+        return book
 
 def add_borrower(name: str, email: str, phone: str = None):
     """Register a new borrower. Returns the created Borrower object."""
@@ -161,6 +163,7 @@ def add_borrower(name: str, email: str, phone: str = None):
         session.add(borrower)
         session.commit()
         session.refresh(borrower)
+        return borrower
 
 def checkout_book(book_id: int, borrower_id: int, days: int = 14):
     """
@@ -170,13 +173,24 @@ def checkout_book(book_id: int, borrower_id: int, days: int = 14):
     """
     # TODO: implement
     with Session(engine) as session:
-        check_out = Checkout(
-            book_id = book_id,
-            borrower_id = borrower_id,
-            checkout_date = date.today(),
-            due_date = date.today() + timedelta(days=14)
-        )
-    # My TODO: Need to finish this.
+        try:
+            book = session.get(Book, book_id)
+            if book is None or not book.available:
+                raise ValueError("Book Not Available")
+            else:
+                check_out = Checkout(
+                book_id = book_id,
+                borrower_id = borrower_id,
+                checkout_date = date.today(),
+                due_date = date.today() + timedelta(days=14)
+                )
+                session.add(check_out)
+                book.available = False
+                session.commit()
+                session.refresh(check_out)
+                return check_out
+        except ValueError as e:
+            print(e)
 
 def return_book(checkout_id: int):
     """
@@ -184,7 +198,12 @@ def return_book(checkout_id: int):
     Returns the updated Checkout object.
     """
     # TODO: implement
-    pass
+    with Session(engine) as session:
+        checkout = session.get(Checkout, checkout_id)
+        checkout.return_date = date.today()
+        book = session.get(Book, checkout.book_id)
+        book.available = True
+        return checkout
 
 
 # ============================================================
