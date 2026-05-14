@@ -8,6 +8,7 @@ Your job: Implement the SQLAlchemy models and all functions marked with # TODO.
 from sqlalchemy import create_engine, String, Integer, Boolean, ForeignKey, Table, Column, Date
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, Session
 from datetime import date, timedelta
+from sqlalchemy import func
 
 engine = create_engine("sqlite:///library.db", echo=False)
 
@@ -54,6 +55,9 @@ class Genre(Base):
     # TODO: define columns
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(nullable=False, unique=True)
+    books: Mapped[list["Author"]] = relationship(
+        secondary=book_authors, back_populates="books"
+    )
 
 # TODO: Implement the Book model
 # Attributes: id (PK), title (required), isbn (unique, required),
@@ -104,7 +108,7 @@ class Checkout(Base):
 def init_db():
     """Create all database tables. Call this before using any other functions."""
     # TODO: Base.metadata.create_all(engine)
-    pass
+    Base.metadata.create_all(engine)
 
 
 # ============================================================
@@ -213,19 +217,43 @@ def return_book(checkout_id: int):
 def find_books_by_author(author_name: str) -> list:
     """Return all books whose author name contains author_name (case-insensitive)."""
     # TODO: implement — use LIKE or ilike for partial matching
-    pass
+    with Session(engine) as session:
+        return (
+            session.query(Book)
+            .join(Book.authors)
+            .filter(Author.name.ilike(f"%{author_name}%"))
+            .all()
+        )
 
 def get_overdue_books() -> list:
     """Return all Checkout objects where due_date < today and return_date is None."""
     # TODO: implement
-    pass
+    with Session(engine) as session:
+        return (
+            session.query(Checkout)
+            .filter(Checkout.due_date < date.today(), Checkout.return_date is None)
+        )
 
 def get_popular_genres(limit: int = 3) -> list:
     """Return the top `limit` genres by checkout count."""
     # TODO: implement — needs a join through Book to Checkout
-    pass
+    with Session(engine) as session:
+        return (
+            session.query(Genre.name, func.count(Checkout.id).label("checkout_count"))
+            .join(Genre.books)
+            .join(Checkout, Book.id == Checkout.book_id)
+            .group_by(Genre.id)
+            .order_by(func.count(Checkout.id).desc())
+            .limit(limit)
+            .all()
+        )
 
 def get_available_books() -> list:
     """Return all Book objects where available == True."""
     # TODO: implement
-    pass
+    with Session(engine) as session:
+        return (
+            session.query(Book)
+            .filter(Book.available == True)
+            .all()
+        )

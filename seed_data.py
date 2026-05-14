@@ -12,12 +12,12 @@ def seed():
 
     # Uncomment and expand once you've implemented the model functions:
 
-    # tolkien = add_author("J.R.R. Tolkien", "Author of The Lord of the Rings")
-    # austen  = add_author("Jane Austen")
-    # add_book("The Hobbit", "978-0618260300", tolkien.id, 1937, ["Fantasy", "Adventure"])
-    # add_book("Pride and Prejudice", "978-0141439518", austen.id, 1813, ["Fiction", "Romance"])
-    # add_borrower("Alice Chen", "alice@example.com", "555-0101")
-    # add_borrower("Bob Martinez", "bob@example.com")
+    tolkien = add_author("J.R.R. Tolkien", "Author of The Lord of the Rings")
+    austen  = add_author("Jane Austen")
+    add_book("The Hobbit", "978-0618260300", tolkien.id, 1937, ["Fantasy", "Adventure"])
+    add_book("Pride and Prejudice", "978-0141439518", austen.id, 1813, ["Fiction", "Romance"])
+    add_borrower("Alice Chen", "alice@example.com", "555-0101")
+    add_borrower("Bob Martinez", "bob@example.com")
 
     print("Seed complete! (Uncomment the lines above after implementing your models.)")
 
